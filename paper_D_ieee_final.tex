@@ -1,0 +1,499 @@
+%% IEEE Conference Template — IEEEtran class
+%% Compile: pdflatex -> bibtex -> pdflatex -> pdflatex
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{url}
+\usepackage{microtype}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% ── Document ──────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title ─────────────────────────────────────────────────────────────────────
+\title{Training-Set Diversity Does Not Eliminate Ancestry-Associated\\
+Reference Bias in DNA Foundation Models}
+
+% ── Authors ───────────────────────────────────────────────────────────────────
+\author{
+\IEEEauthorblockN{Thackshanaramana B}
+\IEEEauthorblockA{\textit{Department of Computational Intelligence} \\
+\textit{College of Engineering and Technology} \\
+SRM Institute of Science and Technology \\
+Kattankulathur, Tamil Nadu, India \\
+thackshanaramana0@gmail.com}
+}
+
+\maketitle
+
+% ── Abstract ──────────────────────────────────────────────────────────────────
+\begin{abstract}
+DNA foundation models are increasingly used for genomic variant interpretation,
+yet whether diversity in pretraining data is sufficient to mitigate
+ancestry-associated scoring bias remains unclear. Here, we examine reference
+allele preference in Nucleotide Transformer using ancestry-enriched common
+variants from gnomAD and compare models pretrained on the human reference genome
+and on 3{,}202 genetically diverse human genomes. Both models exhibit a
+significant ancestry-associated scoring asymmetry, with European-enriched
+variants receiving greater reference allele preference than African-enriched
+variants. Strikingly, the EUR--AFR bias gap changes by only 1.2\% following
+diverse-genome pretraining. Neither population allele frequency nor local
+genomic variant density explains the observed difference, indicating that the
+effect is not simply driven by variant prevalence or regional sequence variation.
+These results show that substantially increasing genomic diversity during
+pretraining does not eliminate ancestry-associated reference bias in Nucleotide
+Transformer and point to a persistent reference-centered component in DNA
+foundation-model scoring. More representative genomic representations, including
+pangenome-aware approaches, may therefore be necessary to address
+ancestry-associated asymmetries in genomic foundation models.
+\end{abstract}
+
+\begin{IEEEkeywords}
+DNA foundation models, reference allele bias, ancestry bias, health equity,
+Nucleotide Transformer, masked language model, variant effect prediction,
+pangenome, gnomAD, population genomics
+\end{IEEEkeywords}
+
+% ── I. Introduction ───────────────────────────────────────────────────────────
+\section{Introduction}
+
+The human reference genome GRCh38 (hg38) is the universal coordinate system of
+clinical and computational genomics. However, hg38 is not population-neutral:
+approximately 70\% of its sequence derives from a single donor (RP11), whose
+ancestry has been characterised as African-European admixed \cite{t2t}.
+Crucially, hg38 is a \emph{single linear haplotype}---it encodes one path
+through human sequence diversity, anchoring all downstream analyses to one
+set of reference alleles regardless of the donor's precise ancestry. As of 2023, 86.5\% of participants in the GWAS Catalog were
+of European descent \cite{diversity_gap}, and non-European patients experience
+a ${\sim}23\%$ increase in variants of uncertain significance (VUS) compared
+to Europeans \cite{vus_burden}---a disparity partly attributed to reference
+genome bias propagating through analytical tools.
+
+DNA sequence foundation models represent the newest class of such tools. These
+large transformer architectures---pretrained on genomic sequences via
+self-supervised objectives---have become central to computational genomics,
+with applications spanning regulatory element prediction, variant effect scoring,
+and chromatin accessibility modelling \cite{dalla_torre_nt, dart_eval, gpn_benegas}.
+The Nucleotide Transformer (NT) \cite{dalla_torre_nt}, published in
+\emph{Nature Methods} (2025), exemplifies this class with two 500M-parameter
+models: NT-hg38, pretrained on the single human reference genome, and NT-1000G,
+pretrained on 3{,}202 genetically diverse genomes from the 1000 Genomes Project
+(1000G) spanning 26 populations including ${\sim}660$ African samples (26\%).
+The NT-1000G model was explicitly designed to \emph{``encode a better
+representation of human genetic variation''} \cite{dalla_torre_nt}.
+
+Reference allele bias is a specific and measurable failure mode for these
+models. Under MLM scoring, the model receives a masked k-mer context and
+predicts the probability of each vocabulary token at the masked position. The
+\emph{bias score} is defined as:
+\begin{equation}
+  S = \log P(\text{ref-kmer} \mid \text{context})
+      - \log P(\text{alt-kmer} \mid \text{context})
+  \label{eq:bias}
+\end{equation}
+Positive $S$ means the model assigns higher probability to the reference
+allele; negative $S$ means it prefers the alternate. A population-fair model
+should score variants with $S \approx 0$ when the alternate allele is common
+in the sampled population, regardless of ancestry. Deviation from this
+expectation quantifies the model's reference allele preference.
+
+Pathak et al. \cite{pathak_2024} demonstrated pervasive ancestry bias in 52
+classical variant effect predictors (VEPs) and in protein language models,
+finding that African-ancestry individuals are disproportionately assigned high
+pathogenicity scores for benign variants. However, no study has examined whether
+\emph{DNA sequence foundation models} exhibit analogous ancestry-asymmetric
+reference bias, nor whether diverse training data (NT-1000G's design principle)
+corrects it.
+
+We address three specific questions:
+\begin{enumerate}
+  \item Do NT models show significant positive reference allele bias for
+        African-enriched common variants?
+  \item Is this bias symmetric across ancestries when within-population allele
+        frequency is matched?
+  \item Does diverse training (NT-1000G) correct any observed asymmetry?
+\end{enumerate}
+
+% ── II. Related Work ──────────────────────────────────────────────────────────
+\section{Related Work}
+
+\subsection{Ancestry Bias in Variant Effect Prediction}
+Pathak et al.~\cite{pathak_2024} examined 52 VEPs across 14 ancestry groups
+for missense variants, finding that tools relying on population or clinical
+training data assign disproportionately high pathogenicity scores to variants
+enriched in underrepresented populations. Protein language models (EVE, ESM-1v)
+show reduced but non-zero bias. Our work is the first to apply this framework
+to DNA sequence foundation models.
+
+\subsection{Nucleotide Transformer}
+Dalla-Torre et al.~\cite{dalla_torre_nt} introduced NT-hg38 and NT-1000G,
+evaluating downstream task performance on genomic benchmarks. The NT-1000G model
+is trained on 3{,}202 phased genomes from 27 geographically diverse populations
+totalling 19.2 trillion nucleotides. The authors report improved performance on
+some tasks; no ancestry-stratified analysis of the internal bias scoring function
+is performed.
+
+\subsection{DNA LM Benchmarks}
+DART-Eval \cite{dart_eval} (NeurIPS 2024) benchmarks five DNA language models on
+regulatory tasks including African caQTL datasets, measuring task accuracy rather
+than internal scoring bias. Feng et al.~\cite{benchmark_dna_lm} benchmark
+five DNA LMs on genomic classification and variant tasks; population stratification
+of bias is not examined. Neither work measures reference allele preference as a
+function of variant ancestry.
+
+\subsection{MLM Bias Scoring for Variant Effect}
+Benegas et al.~\cite{gpn_benegas} applied MLM bias scoring genome-wide for
+variant effect prediction via the Genomic Pre-trained Network (GPN), demonstrating
+that DNA language models can serve as unsupervised VEPs. No ancestry-stratified
+analysis of scoring bias is performed.
+
+\subsection{Reference Genome Diversity}
+The T2T-CHM13 assembly and the Human Pangenome Reference Consortium
+(HPRC) \cite{pangenome} have produced ancestry-spanning reference sequences.
+No DNA foundation model trained on pangenome references has been publicly
+released, leaving open the question of whether pangenome training would reduce
+ancestry-specific scoring bias.
+
+\noindent\textbf{Gap:} No prior work has measured reference allele bias in DNA
+foundation models stratified by ancestry-enriched variant sets, nor tested
+whether diverse training corrects it.
+
+% ── III. Methods ──────────────────────────────────────────────────────────────
+\section{Methods}
+
+\subsection{Variant Selection from gnomAD v4}
+
+We queried gnomAD v4~\cite{gnomad_v4} via the public GraphQL API for all
+chromosome 22 SNVs with population-stratified allele frequencies. Two variant
+sets were constructed using symmetric criteria:
+
+\noindent\textbf{African-enriched (AFR):} $\text{AF}_\text{AFR} \geq 0.10$,
+$\text{AF}_\text{EUR} \leq 0.02$, fold-enrichment
+$(\text{AF}_\text{AFR}/\text{AF}_\text{EUR}) \geq 5\times$.
+Yielded $N{=}7{,}684$ variants; within-population AF mean 0.179 (IQR 0.120--0.225).
+
+\noindent\textbf{European-enriched (EUR):} $\text{AF}_\text{EUR} \geq 0.10$,
+$\text{AF}_\text{AFR} \leq 0.02$.
+Yielded $N{=}509$ variants; within-population AF mean 0.171 (IQR 0.118--0.196).
+
+The two sets are matched for within-population allele frequency magnitude
+(Wilcoxon $p{=}0.31$). They differ substantially in global minor allele
+frequency: AFR mean 0.031, EUR mean 0.111. We chose symmetric thresholds to
+ensure the comparison is driven by ancestry enrichment, not by frequency
+magnitude.
+
+\subsection{Models}
+
+Both models were loaded from HuggingFace in CPU-only mode
+(CUDA disabled via \texttt{CUDA\_VISIBLE\_DEVICES=""} before import,
+required to avoid GPU architecture incompatibility with older
+accelerators):
+\begin{itemize}
+  \item \textbf{NT-hg38:} \texttt{InstaDeepAI/nucleotide-transformer-500m-human-ref} ---
+        trained on the single GRCh38 reference genome.
+  \item \textbf{NT-1000G:} \texttt{InstaDeepAI/nucleotide-transformer-500m-1000g} ---
+        trained on 3{,}202 genetically diverse human genomes from the 1000G
+        Project (26\% African, 20\% European, 20\% East Asian, 20\% South Asian,
+        14\% Admixed American).
+\end{itemize}
+
+\subsection{MLM Bias Scoring}
+
+For each variant at chromosomal position $\text{pos}$, a 512-token window was
+extracted from GRCh38 chromosome 22, centred on the variant. Sequences were
+tokenised using the model's 6-mer non-overlapping vocabulary. The k-mer
+containing the variant nucleotide was identified and its token masked. The model
+computed log-softmax probabilities over the vocabulary at the masked position,
+and the bias score $S$ was computed per Eq.~\eqref{eq:bias}. All scoring was
+performed in FP32 without gradient computation. Total scoring calls: 16{,}386
+(7{,}684 AFR + 509 EUR $\times$ 2 models); all completed with status \texttt{ok}.
+
+\subsection{Statistical Analysis}
+
+Between-group comparisons used Welch's $t$-test (unequal variance and sample
+size). Effect sizes are reported as Cohen's $d$. Bootstrap 95\% confidence
+intervals (10{,}000 iterations with \texttt{numpy.random.default\_rng(42)})
+were computed for the EUR$-$AFR mean difference. Balanced resampling (1,000
+iterations; 509 AFR drawn uniformly from the full pool vs.\ 509 EUR) was used
+to confirm robustness to sample-size imbalance. Within-group allele frequency
+calibration was assessed by Pearson correlation $r(\text{AF}, S)$ and Spearman
+$\rho$; Fisher's $z$-test compared correlations across groups. Local variant
+density was computed as the count of gnomAD common variants
+($\text{AF}_\text{AFR}{\geq}0.05$ or $\text{AF}_\text{EUR}{\geq}0.05$) within
+$\pm$500 bp of each focal variant.
+
+% ── IV. Results ───────────────────────────────────────────────────────────────
+\section{Results}
+
+\subsection{Both Models Show Strong Positive Reference Bias for\\African-Enriched Variants}
+
+Table~\ref{tab:descriptive} summarises bias score distributions. NT-hg38 scores
+7{,}684 African-enriched variants with mean $+0.582$ (${\pm}2.227$;
+$t$-test vs.\ zero: $p{=}2.4{\times}10^{-112}$; 59.7\% of variants positive).
+NT-1000G yields mean $+0.508$ ($p{=}3.7{\times}10^{-86}$; 58.4\% positive).
+These effects are large in terms of $p$-value but modest in absolute magnitude:
+the model still systematically prefers the reference allele even when the
+alternate allele is present at 10--50\% frequency in African populations.
+
+\begin{table}[t]
+\caption{Bias score descriptive statistics per group and model}
+\label{tab:descriptive}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Model & Group & $N$ & Mean & SD & $p$ (vs.\ 0) \\
+\midrule
+\multirow{2}{*}{NT-hg38}
+  & AFR & 7,684 & $+$0.582 & 2.227 & $2.4{\times}10^{-112}$ \\
+  & EUR &   509 & $+$1.010 & 2.280 & $1.5{\times}10^{-21}$ \\
+\midrule
+\multirow{2}{*}{NT-1000G}
+  & AFR & 7,684 & $+$0.508 & 2.237 & $3.7{\times}10^{-86}$ \\
+  & EUR &   509 & $+$0.941 & 2.298 & $7.0{\times}10^{-19}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Bias Is Ancestry-Asymmetric at Matched Within-Population Frequency}
+
+Table~\ref{tab:between_group} shows that European-enriched variants receive
+significantly higher positive bias than African-enriched variants across both
+models. The effect replicates independently: $\Delta{=}{+}0.428$
+($p{=}4.7{\times}10^{-5}$, $d{=}0.19$) for NT-hg38 and $\Delta{=}{+}0.433$
+($p{=}4.3{\times}10^{-5}$, $d{=}0.19$) for NT-1000G. Bootstrap 95\% CI for
+the NT-1000G gap is $[{+}0.231,{+}0.640]$, entirely above zero.
+
+To rule out sample-size asymmetry as a confound (7,684 AFR vs.\ 509 EUR),
+we performed balanced resampling: 1,000 iterations each drawing 509 variants
+uniformly at random from the AFR pool and comparing to the 509-variant EUR set.
+The median EUR$-$AFR gap across iterations is $+0.429$
+(95\% CI $[{+}0.243,{+}0.597]$) for NT-hg38 and $+0.428$
+($[{+}0.233,{+}0.623]$) for NT-1000G, with median Cohen's $d{=}0.190$ in both
+cases. The gap exceeds zero in \textbf{all 1,000 iterations} and reaches
+$p{<}0.05$ in 94.8\% (NT-hg38) and 94.3\% (NT-1000G) of iterations. The result
+is not attributable to sample-size asymmetry.
+
+Pooling all 8,193 scored variants and ranking by bias score (descending),
+EUR-enriched variants occupy a mean score percentile of 55.8 vs.\ 49.6 for
+AFR-enriched variants (NT-hg38; NT-1000G: 55.3 vs.\ 49.6). EUR variants
+represent 8.2\% of the top decile despite comprising only 6.2\% of the pool
+(1.32$\times$ enrichment), while AFR variants are proportionally displaced
+toward lower-scoring positions. This cumulative displacement, operating across
+thousands of common variants simultaneously, illustrates that even a modest
+per-variant gap can produce a systematic population-level scoring advantage.
+
+This direction is counterintuitive. European-enriched variants have 3.6$\times$
+higher global minor allele frequency (0.111 vs.\ 0.031); a model tracking
+global frequency would assign \emph{lower} positive bias to European-enriched
+variants (their alternate allele is more globally common). The opposite is
+observed. This rules out global allele frequency as the explanation.
+
+\begin{table}[t]
+\caption{Between-group comparison: EUR vs.\ AFR per model}
+\label{tab:between_group}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Model & $\Delta$ (EUR$-$AFR) & $t$ & $p$ & Cohen's $d$ \\
+\midrule
+NT-hg38  & $+$0.428 & $-$4.10 & $4.7{\times}10^{-5}$ & 0.19 \\
+NT-1000G & $+$0.433 & $-$4.12 & $4.3{\times}10^{-5}$ & 0.19 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Diversity Leaves the Ancestry Gap Unchanged}
+
+Table~\ref{tab:between_model} shows the effect of switching from NT-hg38 to
+NT-1000G. For African-enriched variants, diversity training reduces mean bias
+by 12.6\% in absolute terms (0.074 log-likelihood units; $p{=}0.041$,
+$d{=}0.033$). For European-enriched variants, the reduction is 6.8\%
+($p{=}0.635$, not significant).
+
+The ancestry gap itself changes from $\Delta{=}0.428$ (NT-hg38) to
+$\Delta{=}0.433$ (NT-1000G): a change of $\mathbf{+0.005}$, corresponding to a
+\textbf{1.2\% change in the gap}. Adding 3{,}202 diverse training genomes---26\%
+of which are African---modestly shifts absolute bias levels but leaves the
+relative ancestry asymmetry statistically and practically unchanged.
+
+\begin{table}[t]
+\caption{Effect of diversity training (NT-hg38 $\rightarrow$ NT-1000G)}
+\label{tab:between_model}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}lrrrl@{}}
+\toprule
+Group & Reduction & $p$ & $d$ & Gap change \\
+\midrule
+AFR & 12.6\% & 0.041 & 0.033 & \multirow{2}{*}{$+$0.005 (1.2\%)} \\
+EUR &  6.8\% & 0.635 & 0.030 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Neither Model Is Calibrated to Population Allele Frequency}
+
+Within the African-enriched group, the Pearson correlation between
+$\text{AF}_\text{AFR}$ and bias score is $r{=}{-}0.053$ ($p{=}3.5{\times}10^{-6}$,
+NT-hg38) and $r{=}{-}0.058$ ($p{=}4.2{\times}10^{-7}$, NT-1000G), explaining
+$R^2{=}$0.28\% and 0.33\% of variance respectively. Within the European-enriched
+group, $r{=}{-}0.085$ ($p{=}0.055$, NT-hg38) and $r{=}{-}0.102$ ($p{=}0.021$,
+NT-1000G), explaining $R^2{=}$0.72\% and 1.05\%. Fisher's $z$-test confirms
+the two within-group correlations are not significantly different
+(NT-hg38: $p{=}0.48$; NT-1000G: $p{=}0.33$).
+
+The standard deviation of bias scores (${\approx}2.23$--2.30 log-likelihood
+units) vastly exceeds the between-group mean difference (0.43 units). The model's
+reference preference is overwhelmingly determined by local sequence context, with
+population allele frequency contributing less than 1\% of the variance.
+
+\subsection{Local Variant Density Does Not Explain the Gap}
+
+European-enriched variants reside in significantly denser genomic regions (mean
+15.87 gnomAD neighbours within $\pm$500 bp) than African-enriched variants
+(mean 7.93; $p{=}4.0{\times}10^{-26}$). Within the African-enriched group,
+density correlates positively but marginally with bias ($r{=}{+}0.022$,
+$p{=}0.054$), in the direction opposite to a context-complexity-driven
+explanation. After matching African-enriched variants to the density range of
+European-enriched variants (IQR 4--23 neighbours), the AFR bias mean changes
+from $+$0.508 to $+$0.501; the gap with the EUR group ($+$0.941) is statistically
+unchanged ($p{=}4.2{\times}10^{-5}$). Local genomic variant density is not a confounder.
+
+\subsection{Downstream Scoring Asymmetry}
+
+The scoring gap has a concrete directional consequence: 63.8\% of
+African-enriched variants score below the European-enriched mean.
+Negative bias (model preferring ALT over REF) affects 41.6\% of
+African-enriched variants vs.\ 35.2\% of European-enriched variants
+(odds ratio 1.31; $\chi^2{=}7.94$, $p{=}0.005$). This asymmetry runs in the
+direction of \emph{reduced signal certainty} for African-enriched variants:
+the model is less confident that the reference allele is preferred, producing
+lower-magnitude scores that could translate to higher uncertainty or VUS
+classifications in downstream pipelines that treat reference-allele preference
+as a benignity signal. We measure a scoring difference only; demonstrating
+propagation into clinical pathogenicity labels requires a separate experiment.
+
+% ── V. Discussion ─────────────────────────────────────────────────────────────
+\section{Discussion}
+
+\subsection{The Asymmetry Is Resistant to Training-Set Diversification}
+
+The 1.2\% change in the EUR--AFR gap when moving from NT-hg38 to NT-1000G is
+the central finding of this paper. It indicates that the ancestry-associated
+scoring asymmetry is resistant to training-set diversification under the
+NT-1000G training formulation, and is consistent with a reference-centered
+component in model scoring. One structural candidate: all training genomes in
+NT-1000G---regardless of their ancestry---are expressed as sequences relative
+to GRCh38. The model's local context at any scored position is therefore always
+the linear reference haplotype, irrespective of how many diverse genomes were
+seen during pretraining. Architecture, tokenization strategy, and haplotype
+sampling choices may also contribute; our experiment does not isolate a single
+cause but does show that training-genome diversity alone, in this formulation,
+does not resolve the asymmetry.
+
+This contrasts with protein language models, where diverse training sequences
+can reduce ancestry bias \cite{pathak_2024} because protein LMs operate on
+sequence families without a fixed linear reference coordinate system.
+
+\subsection{Why Population Allele Frequency Is Not Encoded}
+
+Both models show $R^2{<}1\%$ for within-group allele-frequency calibration.
+The NT architecture has no explicit mechanism for encoding population-level
+allele frequency; it learns sequence probability by aggregating over all training
+genomic positions. The net effect is near-total insensitivity to population
+frequency: a variant at $\text{AF}_\text{AFR}{=}30\%$ and one at 10\% are
+nearly indistinguishable in their bias scores ($r{=}-0.058$). This is not a
+failure of training diversity but a fundamental architectural limitation: without
+explicit population labels or population-conditional training, MLM-based DNA LMs
+cannot learn population allele frequencies.
+
+\subsection{Direction of the Gap and Mechanism}
+
+European-enriched variants receive \emph{higher} positive bias despite higher
+global MAF---ruling out a frequency-calibration explanation. We propose that this
+reflects differential haplotype context familiarity. European-enriched variants
+reside in haplotype contexts that closely resemble the GRCh38 reference sequence;
+the model has a strong, confident prior at these sites. African-enriched variants
+sit in haplotype contexts that have diverged further from the European reference;
+the model is less certain, manifesting as lower positive bias (closer to zero).
+This hypothesis is consistent with the density analysis: AFR variants are in
+sparser genomic regions (${\sim}2\times$ fewer common neighbours), yet density
+itself does not account for the gap, suggesting the mechanism operates at the
+haplotype sequence level rather than at variant density.
+
+\subsection{Implications for Genomic AI and Health Equity}
+
+Three implications follow. First, the observed scoring asymmetry warrants caution
+when using NT-based bias scores as ancestry-neutral variant rankers. We measure a
+\emph{scoring difference}, not a demonstrated clinical outcome; whether this
+asymmetry propagates into downstream pathogenicity classifiers or VUS calls
+requires a separate experiment directly linking bias scores to clinical labels
+stratified by patient ancestry. Second, our result suggests that increasing
+training-genome diversity under the current NT training formulation is
+insufficient to close the scoring gap, implying that architectural changes or
+reference-agnostic training are needed. Third, pangenome-based representations
+(T2T-CHM13 \cite{t2t}, HPRC \cite{pangenome}) offer a promising direction by
+removing the single-linear-reference anchor, but this remains to be tested
+empirically in the foundation model setting.
+
+\subsection{Limitations}
+
+This study uses chromosome 22 only. Only NT models are evaluated; whether other
+DNA LMs (DNABERT-2, HyenaDNA, Evo) show analogous patterns requires separate
+investigation. We do not directly measure downstream clinical outcomes;
+demonstrating that NT bias scores affect pathogenicity classifier performance
+on African vs.\ European patient cohorts is an important future direction.
+
+As a sensitivity analysis, we scored an expanded EUR set ($N_\text{EUR}{=}6{,}830$;
+threshold $\text{AF}_\text{EUR}{\geq}0.05$). The EUR$-$AFR gap is directionally
+consistent (NT-hg38: $\Delta{=}{+}0.215$, $p{=}5.3{\times}10^{-9}$, $d{=}0.097$;
+NT-1000G: $\Delta{=}{+}0.204$, $p{=}3.4{\times}10^{-8}$, $d{=}0.092$), though
+the expanded EUR set has a lower within-population AF mean (0.080 vs.\ AFR 0.179),
+so the two sets are no longer matched for frequency magnitude. For this reason,
+the $N{=}509$ AF-matched analysis is the primary result. In the expanded set,
+Fisher's $z$-test detects a significant difference in within-group AF-calibration
+correlations between AFR and EUR (NT-1000G: $p{=}6.7{\times}10^{-5}$), a pattern
+that is underpowered in the matched set and warrants follow-up with a properly
+matched larger EUR cohort.
+
+% ── VI. Conclusion ────────────────────────────────────────────────────────────
+\section{Conclusion}
+
+We show that Nucleotide Transformer exhibits a significant ancestry-associated
+scoring asymmetry: European-enriched common variants receive greater reference
+allele preference than African-enriched variants at matched within-population
+allele frequency ($\Delta{=}{+}0.43$, $p{<}5{\times}10^{-5}$, replicated
+across both NT models). The EUR--AFR gap changes by only 1.2\% when pretraining
+expands from a single reference genome to 3{,}202 diverse genomes. Neither model
+encodes population allele frequency ($R^2{<}1\%$), and local variant density
+does not account for the gap. These results indicate that the observed asymmetry
+is resistant to training-set diversification under the NT-1000G formulation and
+is consistent with a persistent reference-centered component in DNA
+foundation-model scoring. Whether downstream clinical applications inherit this
+asymmetry, and whether pangenome-based training resolves it, remain important
+open questions for equitable genomic AI.
+
+% ── Acknowledgements ──────────────────────────────────────────────────────────
+\section*{Acknowledgements}
+The authors thank the gnomAD consortium for making population-stratified allele
+frequency data publicly available, and InstaDeepAI for releasing pre-trained
+Nucleotide Transformer model weights under open licences.
+
+% ── References ────────────────────────────────────────────────────────────────
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

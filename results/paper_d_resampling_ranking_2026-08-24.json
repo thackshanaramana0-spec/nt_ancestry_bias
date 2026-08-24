@@ -1,0 +1,104 @@
+{
+  "balanced_resampling": {
+    "NT-hg38": {
+      "n_sample": 509,
+      "n_iterations": 1000,
+      "median_gap": 0.428979796136058,
+      "ci_lo": 0.24281011349091608,
+      "ci_hi": 0.5972715253211661,
+      "median_cohens_d": 0.19037752485028808,
+      "pct_gap_positive": 100.0,
+      "pct_significant": 94.8
+    },
+    "NT-1000G": {
+      "n_sample": 509,
+      "n_iterations": 1000,
+      "median_gap": 0.4275252945530859,
+      "ci_lo": 0.2334293011129488,
+      "ci_hi": 0.622634108970582,
+      "median_cohens_d": 0.1886478028531593,
+      "pct_gap_positive": 100.0,
+      "pct_significant": 94.3
+    }
+  },
+  "ranking_displacement": {
+    "NT-hg38": {
+      "N_total": 8193,
+      "n_afr": 7684,
+      "n_eur": 509,
+      "mean_afr_percentile": 49.61368177534081,
+      "mean_eur_percentile": 55.83196314004175,
+      "top10_afr_obs": 752,
+      "top10_afr_exp": 768.1186378615891,
+      "top10_eur_obs": 67,
+      "top10_eur_exp": 50.881362138410836,
+      "afr_bottom_half_pct": 50.533576262363354,
+      "cumulative": {
+        "top10pct": {
+          "obs": 752,
+          "exp": 768.4,
+          "ratio": 0.9786569495054659
+        },
+        "top20pct": {
+          "obs": 1497,
+          "exp": 1536.8,
+          "ratio": 0.974102030192608
+        },
+        "top25pct": {
+          "obs": 1879,
+          "exp": 1921.0,
+          "ratio": 0.9781363872982821
+        },
+        "top33pct": {
+          "obs": 2486,
+          "exp": 2535.72,
+          "ratio": 0.9803921568627452
+        },
+        "top50pct": {
+          "obs": 3801,
+          "exp": 3842.0,
+          "ratio": 0.989328474752733
+        }
+      }
+    },
+    "NT-1000G": {
+      "N_total": 8193,
+      "n_afr": 7684,
+      "n_eur": 509,
+      "mean_afr_percentile": 49.64589442144391,
+      "mean_eur_percentile": 55.34567242755403,
+      "top10_afr_obs": 747,
+      "top10_afr_exp": 768.1186378615891,
+      "top10_eur_obs": 72,
+      "top10_eur_exp": 50.881362138410836,
+      "afr_bottom_half_pct": 50.46850598646538,
+      "cumulative": {
+        "top10pct": {
+          "obs": 747,
+          "exp": 768.4,
+          "ratio": 0.972149921915669
+        },
+        "top20pct": {
+          "obs": 1512,
+          "exp": 1536.8,
+          "ratio": 0.9838625715773035
+        },
+        "top25pct": {
+          "obs": 1888,
+          "exp": 1921.0,
+          "ratio": 0.982821447162936
+        },
+        "top33pct": {
+          "obs": 2484,
+          "exp": 2535.72,
+          "ratio": 0.9796034262458001
+        },
+        "top50pct": {
+          "obs": 3806,
+          "exp": 3842.0,
+          "ratio": 0.9906298802706923
+        }
+      }
+    }
+  }
+}
