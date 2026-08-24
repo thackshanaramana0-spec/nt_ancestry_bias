@@ -2,7 +2,6 @@
 __pycache__/
 *.pyc
 *.pyo
-*.egg-info/
 .venv/
 env/
 
@@ -16,46 +15,32 @@ env/
 *.toc
 *.fls
 *.fdb_latexmk
-*.pdf
+paper_D_ieee_final.pdf
 
-# Data — raw reference and intermediate
+# ── Raw reference data (too large for git) ────────────────────────────────────
 data/gnomad/
 data/hg38/
 data/hprc/
+data/clinvar/
 
-# Kaggle kernel working outputs (keep only output_final2 and output_expanded)
-kaggle_kernel/output/
-kaggle_kernel/output2/
-kaggle_kernel/output3/
-kaggle_kernel/output_dna2/
-kaggle_kernel/output_e2/
-kaggle_kernel/output_fullchr22/
-kaggle_kernel/output_v3/
-kaggle_kernel/output_v4/
-kaggle_kernel/output_v5/
-kaggle_kernel/output_v6/
-kaggle_kernel/output_v7/
-kaggle_kernel/output_v8/
-kaggle_kernel/output_v9/
-kaggle_kernel/v5_logs_raw.txt
-kaggle_kernel/kaggle_dataset_check/
-kaggle_kernel/dataset_upload/
-
-# Old/intermediate figures
+# ── Intermediate figures (only final 3 are committed) ─────────────────────────
 figures/fig3_efficiency.png
 figures/fig1_violin_expanded_2026-08-23.png
 
-# Old paper drafts
-paper_D_ieee_2026-08-23.tex
-paper_D_overleaf.zip
-paper_D_plan_2026-08-23.md
-PLAN.md
+# ── Working/draft documents not for public repo ────────────────────────────────
+ABSTRACT.md
 EXPERIMENTS.md
 LOG.md
+PLAN.md
 PAPER_STATUS.md
-ABSTRACT.md
+paper_D_plan_2026-08-23.md
+paper_D_ieee_2026-08-23.tex
+paper_D_overleaf.zip
+LITERATURE.md
+literature/
+paper/
 
-# Intermediate analysis scripts
+# ── Experimental / deprecated scripts ────────────────────────────────────────
 scripts/analyze_e1.py
 scripts/analyze_e2.py
 scripts/run_e1.py
@@ -65,8 +50,44 @@ scripts/score_variant.py
 scripts/test_pipeline.py
 scripts/make_figures.py
 scripts/download_data.py
-scripts/__pycache__/
+scripts/README.md
 
-# Data dirs not committed
-data/clinvar/
-data/results/
+# ── Kaggle kernel working outputs (keep only output_final2 and output_expanded)
+kaggle_kernel/output/
+kaggle_kernel/output2/
+kaggle_kernel/output3/
+kaggle_kernel/output_dna2/
+kaggle_kernel/output_e2/
+kaggle_kernel/output_final/
+kaggle_kernel/output_fullchr22/
+kaggle_kernel/output_v3/
+kaggle_kernel/output_v4/
+kaggle_kernel/output_v5/
+kaggle_kernel/output_v6/
+kaggle_kernel/output_v7/
+kaggle_kernel/output_v8/
+kaggle_kernel/output_v9/
+
+# Kaggle kernel checkpoint/intermediate JSONL (only e1_full_chr22.jsonl kept)
+kaggle_kernel/output_final2/ckpt_*.jsonl
+kaggle_kernel/output_final2/chr22.fa.gz
+kaggle_kernel/output_expanded/ckpt_*.jsonl
+kaggle_kernel/output_expanded/chr22.fa.gz
+
+# Kaggle kernel log and metadata noise
+kaggle_kernel/output_final2/*.log
+kaggle_kernel/output_expanded/*.log
+kaggle_kernel/v5_logs_raw.txt
+kaggle_kernel/dataset-metadata.json
+kaggle_kernel/dnabert2-metadata.json
+kaggle_kernel/e2-kernel-metadata.json
+kaggle_kernel/full-chr22-metadata.json
+kaggle_kernel/kernel-metadata.json
+kaggle_kernel/dataset_upload/
+kaggle_kernel/kaggle_dataset_check/
+
+# Deprecated kaggle scoring scripts
+kaggle_kernel/run_dnabert2.py
+kaggle_kernel/run_e2_clinvar.py
+kaggle_kernel/run_colab_full_chr22.py
+kaggle_kernel/run_scoring.py

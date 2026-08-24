@@ -1,0 +1,14 @@
+{
+  "id": "thackshana/paper-d-expanded-eur-chr22-scoring",
+  "title": "Paper D Expanded EUR Chr22 NT Scoring",
+  "code_file": "run_expanded.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": ["thackshana/paperd-variants"],
+  "competition_sources": [],
+  "kernel_sources": []
+}
