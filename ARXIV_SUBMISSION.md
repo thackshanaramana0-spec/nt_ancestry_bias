@@ -37,7 +37,7 @@ pangenome-aware approaches, may therefore be necessary to address
 ancestry-associated asymmetries in genomic foundation models.
 
 ## Comments
-8 pages, 3 figures, 4 tables. Code and data: https://github.com/thackshana/nt-ancestry-bias
+8 pages, 3 figures, 4 tables. Code and data: https://github.com/thackshanaramana0-spec/nt_ancestry_bias
 
 ## MSC classes (optional)
 92-10 (Biology and other natural sciences)
