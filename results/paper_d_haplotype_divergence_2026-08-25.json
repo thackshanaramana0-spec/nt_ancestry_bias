@@ -1,0 +1,34 @@
+{
+  "NT_hg38": {
+    "afr_ctx_mean_afr_group": 1.8867777199375326,
+    "afr_ctx_mean_eur_group": 0.7288801571709234,
+    "t_ctx_between_groups": 16.351327789015404,
+    "p_ctx_between_groups": 1.733179283304064e-51,
+    "pearson_r_ctx_bias_AFR": -0.05102606628744532,
+    "p_r_ctx_bias_AFR": 7.639264607439695e-06,
+    "ols_beta_group": 0.3799874243048208,
+    "ols_se_group": 0.10251954771931383,
+    "ols_t_group": 3.70648752124015,
+    "ols_p_group": 0.0002115397962302104,
+    "ols_beta_afr_ctx": -0.03301483298081537,
+    "ols_t_afr_ctx": -3.308192032271648,
+    "ols_p_afr_ctx": 0.000943054096737754,
+    "group_significant_after_controlling_divergence": true
+  },
+  "NT_1000G": {
+    "afr_ctx_mean_afr_group": 1.8867777199375326,
+    "afr_ctx_mean_eur_group": 0.7288801571709234,
+    "t_ctx_between_groups": 16.351327789015404,
+    "p_ctx_between_groups": 1.733179283304064e-51,
+    "pearson_r_ctx_bias_AFR": -0.056835524209546205,
+    "p_r_ctx_bias_AFR": 6.185549916922985e-07,
+    "ols_beta_group": 0.3785197652838781,
+    "ols_se_group": 0.10292170521945902,
+    "ols_t_group": 3.677744791312618,
+    "ols_p_group": 0.00023681252615875264,
+    "ols_beta_afr_ctx": -0.03793334037406734,
+    "ols_t_afr_ctx": -3.7861899923904745,
+    "ols_p_afr_ctx": 0.00015406803276220594,
+    "group_significant_after_controlling_divergence": true
+  }
+}

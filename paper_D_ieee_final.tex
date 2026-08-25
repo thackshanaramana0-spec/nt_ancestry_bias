@@ -248,7 +248,12 @@ calibration was assessed by Pearson correlation $r(\text{AF}, S)$ and Spearman
 $\rho$; Fisher's $z$-test compared correlations across groups. Local variant
 density was computed as the count of gnomAD common variants
 ($\text{AF}_\text{AFR}{\geq}0.05$ or $\text{AF}_\text{EUR}{\geq}0.05$) within
-$\pm$500 bp of each focal variant. All tests are two-sided; the primary
+$\pm$500 bp of each focal variant. Strict individual-level AF matching used
+nearest-neighbour assignment (without replacement) of AFR variants to EUR
+variants by within-population AF. The AFR-context divergence score was the
+count of AFR-enriched gnomAD variants within $\pm$500 bp; OLS regression
+tested whether the ancestry group effect survived controlling for this proxy
+and within-population AF jointly. All tests are two-sided; the primary
 between-group finding ($p{<}5{\times}10^{-5}$) remains significant after
 Bonferroni correction for the six primary tests performed ($\alpha{=}0.05/6
 {=}0.0083$).
@@ -318,9 +323,19 @@ variance ($\sigma{\approx}2.23$), which reflects that reference preference is
 primarily driven by local sequence context. The population-scale consequences of this per-variant gap are
 demonstrated by the resampling and ranking results below.
 
+As a strict individual-level sensitivity check, we performed nearest-neighbour
+AF matching: each EUR variant (AF$_\text{EUR}{=}x$) was paired to the AFR
+variant with closest AF$_\text{AFR}$, without replacement, yielding N$=509$
+matched pairs with mean $|$AF$_\text{AFR}{-}$AF$_\text{EUR}|{=}0.0002$. The
+gap is directionally consistent in both matched models (NT-hg38:
+$\Delta{=}{+}0.230$; NT-1000G: $\Delta{=}{+}0.318$, $p{=}0.032$). NT-hg38
+does not reach $p{<}0.05$ at this $N$, consistent with the primary analysis
+effect size ($d{=}0.09$) being underpowered at $N{=}509$ per group.
+
 To rule out sample-size asymmetry as a confound (7,684 AFR vs.\ 509 EUR),
-we performed balanced resampling: 1,000 iterations each drawing 509 variants
-uniformly at random from the AFR pool and comparing to the 509-variant EUR set.
+we additionally performed balanced resampling: 1,000 iterations each drawing
+509 variants uniformly at random from the AFR pool and comparing to the
+509-variant EUR set.
 The median EUR$-$AFR gap across iterations is $+0.429$
 (95\% CI $[{+}0.243,{+}0.597]$) for NT-hg38 and $+0.428$
 ($[{+}0.233,{+}0.623]$) for NT-1000G, with median Cohen's $d{=}0.190$ in both
@@ -413,17 +428,37 @@ units) vastly exceeds the between-group mean difference (0.43 units). The model'
 reference preference is overwhelmingly determined by local sequence context, with
 population allele frequency contributing less than 1\% of the variance.
 
-\subsection{Local Variant Density Does Not Explain the Gap}
+\subsection{Reference-Context Divergence: Partial Mechanism, Robust Group Effect}
 
 European-enriched variants reside in significantly denser genomic regions (mean
 15.87 gnomAD neighbours within $\pm$500 bp) than African-enriched variants
-(mean 7.93; $p{=}4.0{\times}10^{-26}$). Within the African-enriched group,
-density correlates positively but marginally with bias ($r{=}{+}0.022$,
-$p{=}0.054$), in the direction opposite to a context-complexity-driven
-explanation. After matching African-enriched variants to the density range of
-European-enriched variants (IQR 4--23 neighbours), the AFR bias mean changes
-from $+$0.508 to $+$0.501; the gap with the EUR group ($+$0.941) is statistically
-unchanged ($p{=}4.2{\times}10^{-5}$). Local genomic variant density is not a confounder.
+(mean 7.93; $p{=}4.0{\times}10^{-26}$). After matching African-enriched
+variants to the density range of European-enriched variants (IQR 4--23
+neighbours), the gap is statistically unchanged ($p{=}4.2{\times}10^{-5}$);
+total variant density is not a confounder.
+
+To test the proposed mechanism more directly, we computed an
+\emph{AFR-context divergence score} for each variant: the count of
+AFR-enriched gnomAD variants (AF$_\text{AFR}{\geq}0.10$,
+AF$_\text{EUR}{\leq}0.02$, fold${\geq}5\times$) within $\pm$500 bp, as a
+proxy for how much the local haplotype context departs from the
+European-anchored reference in African-ancestry haplotypes. AFR-enriched focal
+variants have significantly higher AFR-context scores than EUR-enriched variants
+(1.89 vs.\ 0.73; $p{=}1.7{\times}10^{-51}$). Within the AFR group,
+AFR-context score is negatively correlated with bias score
+($r{=}{-}0.051$, $p{=}7.6{\times}10^{-6}$): variants in more
+reference-diverged contexts receive lower positive bias, consistent with
+the mechanism hypothesis.
+
+Critically, fitting OLS with group label, AFR-context score, and within-population
+AF jointly shows that the ancestry group effect \emph{remains independently
+significant} after controlling for divergence (NT-hg38: $\beta_\text{group}
+{=}{+}0.380$, $p{=}2.1{\times}10^{-4}$; NT-1000G: $\beta_\text{group}
+{=}{+}0.379$, $p{=}2.4{\times}10^{-4}$). The AFR-context divergence proxy
+independently predicts bias ($\beta_\text{ctx}{=}{-}0.033$ to $-0.038$,
+$p{<}10^{-3}$), supporting the haplotype-familiarity hypothesis, but does not
+fully account for the ancestry gap---additional architectural or tokenization
+factors likely contribute.
 
 \begin{figure*}[!t]
 \centering
