@@ -24,7 +24,7 @@
 
 % ── Title ─────────────────────────────────────────────────────────────────────
 \title{Training-Set Diversity Does Not Eliminate Ancestry-Associated\\
-Reference Bias in DNA Foundation Models}
+Reference Bias in Nucleotide Transformer}
 
 % ── Authors ───────────────────────────────────────────────────────────────────
 \author{
@@ -72,11 +72,9 @@ pangenome, gnomAD, population genomics
 
 The human reference genome GRCh38 (hg38) is the universal coordinate system of
 clinical and computational genomics. However, hg38 is not population-neutral:
-approximately 70\% of its sequence derives from a single donor (RP11), whose
-ancestry has been characterised as African-European admixed \cite{t2t}.
-Crucially, hg38 is a \emph{single linear haplotype}---it encodes one path
-through human sequence diversity, anchoring all downstream analyses to one
-set of reference alleles regardless of the donor's precise ancestry. Sirugo et al.\ reported that 86.5\% of participants in the GWAS Catalog were
+it is a \emph{single linear haplotype} constructed from a small number of donors,
+encoding one path through human sequence diversity and anchoring all downstream
+analyses to one fixed set of reference alleles \cite{t2t}. Sirugo et al.\ reported that 86.5\% of participants in the GWAS Catalog were
 of European descent \cite{diversity_gap}, and non-European patients experience
 significantly higher rates of variants of uncertain significance (VUS) compared
 to Europeans \cite{vus_burden}---a disparity partly attributed to reference
@@ -308,9 +306,9 @@ The Mann-Whitney AUROC---the probability that a randomly selected EUR variant
 scores higher than a randomly selected AFR variant---is 0.562 (NT-hg38;
 $p{=}1.3{\times}10^{-6}$) and 0.557 (NT-1000G; $p{=}8.0{\times}10^{-6}$),
 both significant against a null AUROC of 0.50. The per-variant gap ($d{=}0.19$)
-is attenuated by high within-population scoring variance ($\sigma{\approx}2.23$),
-which reflects that reference preference is primarily driven by local sequence
-context. The population-scale consequences of this per-variant gap are
+is diluted in per-variant discriminability by high within-population scoring
+variance ($\sigma{\approx}2.23$), which reflects that reference preference is
+primarily driven by local sequence context. The population-scale consequences of this per-variant gap are
 demonstrated by the resampling and ranking results below.
 
 To rule out sample-size asymmetry as a confound (7,684 AFR vs.\ 509 EUR),
@@ -477,9 +475,9 @@ allele frequency; it learns sequence probability by aggregating over all trainin
 genomic positions. The net effect is near-total insensitivity to population
 frequency: a variant at $\text{AF}_\text{AFR}{=}30\%$ and one at 10\% are
 nearly indistinguishable in their bias scores ($r{=}-0.058$). This is not a
-failure of training diversity but a fundamental architectural limitation: without
+failure of training diversity but a fundamental architectural property: without
 explicit population labels or population-conditional training, MLM-based DNA LMs
-cannot learn population allele frequencies.
+do not encode population allele frequencies in their bias scores.
 
 \subsection{Direction of the Gap and Mechanism}
 
@@ -503,7 +501,8 @@ is a prerequisite for downstream pathogenicity misclassification, which
 requires a separate clinical validation study to quantify. Second, increasing
 training-genome diversity under the NT linear-reference formulation is
 insufficient to close the scoring gap; architectural changes or
-reference-agnostic training are required, not merely a larger training cohort.
+reference-agnostic training are indicated by this result, as diversity training
+alone proved insufficient.
 Third, pangenome-based representations (T2T-CHM13 \cite{t2t},
 HPRC \cite{pangenome}) are the most structurally motivated remedy, as they
 remove the single-linear-reference anchor that our analysis identifies as a
