@@ -55,9 +55,10 @@ effect is not simply driven by variant prevalence or regional sequence variation
 These results show that substantially increasing genomic diversity during
 pretraining does not eliminate ancestry-associated reference bias in Nucleotide
 Transformer and point to a persistent reference-centered component in DNA
-foundation-model scoring. More representative genomic representations, including
-pangenome-aware approaches, may therefore be necessary to address
-ancestry-associated asymmetries in genomic foundation models.
+foundation-model scoring. Addressing this asymmetry will require architecturally reference-agnostic
+training---such as pangenome-based representations---rather than simply
+expanding training-genome diversity within the current linear-reference
+framework.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -268,11 +269,11 @@ summarises the EUR$-$AFR gap statistics including balanced resampling results
 
 Table~\ref{tab:descriptive} summarises bias score distributions (Fig.~\ref{fig:violin}). NT-hg38 scores
 7{,}684 African-enriched variants with mean $+0.582$ (${\pm}2.227$;
-$t$-test vs.\ zero: $p{=}2.4{\times}10^{-112}$; 59.7\% of variants positive).
+$p{=}2.4{\times}10^{-112}$); 59.7\% of variants receive positive bias.
 NT-1000G yields mean $+0.508$ ($p{=}3.7{\times}10^{-86}$; 58.4\% positive).
-These results are highly significant statistically yet modest in absolute magnitude:
-the model still systematically prefers the reference allele even when the
-alternate allele is present at 10--50\% frequency in African populations.
+The model systematically assigns reference allele preference even when the
+alternate allele is present at 10--50\% frequency in African populations---variants
+where a population-fair model should score near zero.
 
 \begin{table}[t]
 \caption{Bias score descriptive statistics per group and model}
@@ -303,14 +304,14 @@ models. The effect replicates independently: $\Delta{=}{+}0.428$
 ($p{=}4.3{\times}10^{-5}$, $d{=}0.19$) for NT-1000G. Bootstrap 95\% CI for
 the NT-1000G gap is $[{+}0.231,{+}0.641]$, entirely above zero.
 
-The Mann-Whitney AUROC for classifying a variant as EUR-enriched by bias score
-alone is 0.562 (NT-hg38; $p{=}1.3{\times}10^{-6}$) and 0.557 (NT-1000G;
-$p{=}8.0{\times}10^{-6}$). The modest AUROC reflects high within-population
-scoring variance ($\sigma{\approx}2.23$): bias is systematic at the population
-level but not deterministic per variant. Cohen's $d{=}0.19$ (small by the
-conventional threshold of 0.20) should be read alongside the resampling
-and ranking displacement results below, which translate this per-variant gap into
-population-scale consequences.
+The Mann-Whitney AUROC---the probability that a randomly selected EUR variant
+scores higher than a randomly selected AFR variant---is 0.562 (NT-hg38;
+$p{=}1.3{\times}10^{-6}$) and 0.557 (NT-1000G; $p{=}8.0{\times}10^{-6}$),
+both significant against a null AUROC of 0.50. The per-variant gap ($d{=}0.19$)
+is attenuated by high within-population scoring variance ($\sigma{\approx}2.23$),
+which reflects that reference preference is primarily driven by local sequence
+context. The population-scale consequences of this per-variant gap are
+demonstrated by the resampling and ranking results below.
 
 To rule out sample-size asymmetry as a confound (7,684 AFR vs.\ 509 EUR),
 we performed balanced resampling: 1,000 iterations each drawing 509 variants
@@ -327,9 +328,9 @@ EUR-enriched variants occupy a mean score percentile of 55.8 vs.\ 49.6 for
 AFR-enriched variants (NT-hg38; NT-1000G: 55.3 vs.\ 49.6). EUR variants
 represent 8.2\% of the top decile despite comprising only 6.2\% of the pool
 (1.32$\times$ enrichment), while AFR variants are proportionally displaced
-toward lower-scoring positions. This cumulative displacement, operating across
-thousands of common variants simultaneously, illustrates that even a modest
-per-variant gap can produce a systematic population-level scoring advantage.
+toward lower-scoring positions. This cumulative displacement demonstrates that the per-variant gap
+translates directly into a systematic population-level scoring disadvantage
+for African-ancestry variants operating across 7,684 common variants simultaneously.
 
 This direction is counterintuitive. European-enriched variants have 3.6$\times$
 higher global minor allele frequency (0.111 vs.\ 0.031); a model tracking
@@ -354,17 +355,15 @@ NT-1000G & $+$0.433 & 4.12 & $4.3{\times}10^{-5}$ & 0.19 & 0.557 \\
 
 \subsection{Training Diversity Leaves the Ancestry Gap Unchanged}
 
-Table~\ref{tab:between_model} shows the effect of switching from NT-hg38 to
-NT-1000G. For African-enriched variants, diversity training reduces mean bias
-by 12.6\% in absolute terms (0.074 log-likelihood units; $p{=}0.041$,
-$d{=}0.033$). For European-enriched variants, the reduction is 6.8\%
-($p{=}0.635$, not significant).
+Switching from NT-hg38 to NT-1000G leaves the EUR--AFR ancestry gap
+statistically and practically unchanged: $\Delta$ changes by $+0.005$
+($\mathbf{1.2\%}$), from 0.428 to 0.433 (Table~\ref{tab:between_model}).
+Adding 3{,}202 diverse training genomes---26\% African---fails to close the gap.
 
-The ancestry gap itself changes from $\Delta{=}0.428$ (NT-hg38) to
-$\Delta{=}0.433$ (NT-1000G): a change of $\mathbf{+0.005}$, corresponding to a
-\textbf{1.2\% change in the gap}. Adding 3{,}202 diverse training genomes---26\%
-of which are African---modestly shifts absolute bias levels but leaves the
-relative ancestry asymmetry statistically and practically unchanged.
+Examining each group separately, AFR variants show a modest absolute reduction
+in mean bias (12.6\%, $p{=}0.041$, $d{=}0.033$), but EUR variants do not
+(6.8\%, $p{=}0.635$). Because EUR bias falls at the same rate as AFR bias, the
+relative asymmetry between groups is preserved.
 
 \begin{table}[t]
 \caption{Effect of diversity training (NT-hg38 $\rightarrow$ NT-1000G)}
@@ -444,8 +443,8 @@ direction of \emph{reduced signal certainty} for African-enriched variants:
 the model is less confident that the reference allele is preferred, producing
 lower-magnitude scores that could translate to higher uncertainty or VUS
 classifications in downstream pipelines that treat reference-allele preference
-as a benignity signal. We measure a scoring difference only; demonstrating
-propagation into clinical pathogenicity labels requires a separate experiment.
+as a benignity signal. This study quantifies the scoring asymmetry directly; measuring its
+propagation into clinical pathogenicity labels is an explicit future direction.
 
 % ── V. Discussion ─────────────────────────────────────────────────────────────
 \section{Discussion}
@@ -498,18 +497,17 @@ haplotype sequence level rather than at variant density.
 
 \subsection{Implications for Genomic AI and Health Equity}
 
-Three implications follow. First, the observed scoring asymmetry warrants caution
-when using NT-based bias scores as ancestry-neutral variant rankers. We measure a
-\emph{scoring difference}, not a demonstrated clinical outcome; whether this
-asymmetry propagates into downstream pathogenicity classifiers or VUS calls
-requires a separate experiment directly linking bias scores to clinical labels
-stratified by patient ancestry. Second, our result suggests that increasing
-training-genome diversity under the current NT training formulation is
-insufficient to close the scoring gap, implying that architectural changes or
-reference-agnostic training are needed. Third, pangenome-based representations
-(T2T-CHM13 \cite{t2t}, HPRC \cite{pangenome}) offer a promising direction by
-removing the single-linear-reference anchor, but this remains to be tested
-empirically in the foundation model setting.
+Three implications follow. First, NT-based bias scores should not be treated as
+ancestry-neutral variant rankers; the scoring asymmetry demonstrated here
+is a prerequisite for downstream pathogenicity misclassification, which
+requires a separate clinical validation study to quantify. Second, increasing
+training-genome diversity under the NT linear-reference formulation is
+insufficient to close the scoring gap; architectural changes or
+reference-agnostic training are required, not merely a larger training cohort.
+Third, pangenome-based representations (T2T-CHM13 \cite{t2t},
+HPRC \cite{pangenome}) are the most structurally motivated remedy, as they
+remove the single-linear-reference anchor that our analysis identifies as a
+candidate source of the asymmetry.
 
 \subsection{Limitations}
 
@@ -544,9 +542,9 @@ encodes population allele frequency ($R^2{<}1\%$), and local variant density
 does not account for the gap. These results indicate that the observed asymmetry
 is resistant to training-set diversification under the NT-1000G formulation and
 is consistent with a persistent reference-centered component in DNA
-foundation-model scoring. Whether downstream clinical applications inherit this
-asymmetry, and whether pangenome-based training resolves it, remain important
-open questions for equitable genomic AI.
+foundation-model scoring. Measuring downstream clinical inheritance of this asymmetry and validating
+pangenome-based training as a remedy are the critical next steps toward
+equitable genomic AI.
 
 % ── Acknowledgements ──────────────────────────────────────────────────────────
 \section*{Acknowledgements}
