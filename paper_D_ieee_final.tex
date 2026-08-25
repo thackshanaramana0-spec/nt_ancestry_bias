@@ -49,7 +49,7 @@ and on 3{,}202 genetically diverse human genomes. Both models exhibit a
 significant ancestry-associated scoring asymmetry, with European-enriched
 variants receiving greater reference allele preference than African-enriched
 variants. Strikingly, the EUR--AFR bias gap is practically unchanged following
-diverse-genome pretraining (1.2\% change, non-decreasing). Neither population allele frequency nor local
+diverse-genome pretraining (the gap widens by 1.2\%, from $\Delta{=}0.428$ to $\Delta{=}0.433$). Neither population allele frequency nor local
 genomic variant density explains the observed difference, indicating that the
 effect is not simply driven by variant prevalence or regional sequence variation.
 These results show that substantially increasing genomic diversity during
@@ -232,8 +232,10 @@ performed in FP32 without gradient computation. Total scoring calls: 16{,}386
 \subsection{Statistical Analysis}
 
 Between-group comparisons used Welch's $t$-test (unequal variance and sample
-size). Effect sizes are reported as Cohen's $d$. Bootstrap 95\% confidence
-intervals (10{,}000 iterations with \texttt{numpy.random.default\_rng(42)})
+size). Effect sizes are reported as Cohen's $d$ (pooled sample variance, ddof=1).
+Mann-Whitney AUROC was computed as $U / (n_\text{EUR} \times n_\text{AFR})$, where
+$U$ is the one-sided Mann-Whitney statistic testing EUR scores exceed AFR scores.
+Bootstrap 95\% confidence intervals (10{,}000 iterations with \texttt{numpy.random.default\_rng(42)})
 were computed for the EUR$-$AFR mean difference. Balanced resampling (1,000
 iterations; 509 AFR drawn uniformly from the full pool vs.\ 509 EUR) was used
 to confirm robustness to sample-size imbalance. Within-group allele frequency
@@ -241,7 +243,10 @@ calibration was assessed by Pearson correlation $r(\text{AF}, S)$ and Spearman
 $\rho$; Fisher's $z$-test compared correlations across groups. Local variant
 density was computed as the count of gnomAD common variants
 ($\text{AF}_\text{AFR}{\geq}0.05$ or $\text{AF}_\text{EUR}{\geq}0.05$) within
-$\pm$500 bp of each focal variant.
+$\pm$500 bp of each focal variant. All tests are two-sided; the primary
+between-group finding ($p{<}5{\times}10^{-5}$) remains significant after
+Bonferroni correction for the six primary tests performed ($\alpha{=}0.05/6
+{=}0.0083$).
 
 % ── IV. Results ───────────────────────────────────────────────────────────────
 \section{Results}
@@ -460,9 +465,10 @@ sampling choices may also contribute; our experiment does not isolate a single
 cause but does show that training-genome diversity alone, in this formulation,
 does not resolve the asymmetry.
 
-This contrasts with protein language models, where diverse training sequences
-can reduce ancestry bias \cite{pathak_2024} because protein LMs operate on
-sequence families without a fixed linear reference coordinate system.
+This contrasts with protein language models, where Pathak et al.\ find reduced
+but non-zero ancestry bias \cite{pathak_2024}; protein LMs operate on
+sequence families without a fixed linear reference coordinate system, removing
+one structural source of reference anchoring that persists in DNA LMs.
 
 \subsection{Why Population Allele Frequency Is Not Encoded}
 
