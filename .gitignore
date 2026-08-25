@@ -17,8 +17,8 @@ env/
 *.fdb_latexmk
 paper_D_ieee_final.pdf
 
-# ── Raw reference data (too large for git) ────────────────────────────────────
-data/gnomad/
+# ── Raw reference data (large; gnomad_af_chr22.tsv IS committed for reproducibility) ──
+data/gnomad/gnomad.genomes.v4.1.sites.chr22.vcf.bgz.tbi
 data/hg38/
 data/hprc/
 data/clinvar/

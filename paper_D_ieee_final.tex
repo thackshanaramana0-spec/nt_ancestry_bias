@@ -175,7 +175,10 @@ whether diverse training corrects it.
 \subsection{Variant Selection from gnomAD v4}
 
 We queried gnomAD v4~\cite{gnomad_v4} via the public GraphQL API for all
-chromosome 22 SNVs with population-stratified allele frequencies. Two variant
+chromosome 22 SNVs with population-stratified allele frequencies. Chromosome 22
+was selected as a well-annotated, fully assembled autosome with 171{,}625
+gnomAD common variants and complete population allele frequency data; results on
+this chromosome are broadly representative of autosomal patterns. Two variant
 sets were constructed using symmetric criteria:
 
 \noindent\textbf{African-enriched (AFR):} $\text{AF}_\text{AFR} \geq 0.10$,
@@ -273,7 +276,7 @@ significantly higher positive bias than African-enriched variants across both
 models. The effect replicates independently: $\Delta{=}{+}0.428$
 ($p{=}4.7{\times}10^{-5}$, $d{=}0.19$) for NT-hg38 and $\Delta{=}{+}0.433$
 ($p{=}4.3{\times}10^{-5}$, $d{=}0.19$) for NT-1000G. Bootstrap 95\% CI for
-the NT-1000G gap is $[{+}0.231,{+}0.640]$, entirely above zero.
+the NT-1000G gap is $[{+}0.231,{+}0.641]$, entirely above zero.
 
 To rule out sample-size asymmetry as a confound (7,684 AFR vs.\ 509 EUR),
 we performed balanced resampling: 1,000 iterations each drawing 509 variants
@@ -307,10 +310,10 @@ observed. This rules out global allele frequency as the explanation.
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
-Model & $\Delta$ (EUR$-$AFR) & $t$ & $p$ & Cohen's $d$ \\
+Model & $\Delta$ (EUR$-$AFR) & $|t|$ & $p$ & Cohen's $d$ \\
 \midrule
-NT-hg38  & $+$0.428 & $-$4.10 & $4.7{\times}10^{-5}$ & 0.19 \\
-NT-1000G & $+$0.433 & $-$4.12 & $4.3{\times}10^{-5}$ & 0.19 \\
+NT-hg38  & $+$0.428 & 4.10 & $4.7{\times}10^{-5}$ & 0.19 \\
+NT-1000G & $+$0.433 & 4.12 & $4.3{\times}10^{-5}$ & 0.19 \\
 \bottomrule
 \end{tabular}
 \end{table}
