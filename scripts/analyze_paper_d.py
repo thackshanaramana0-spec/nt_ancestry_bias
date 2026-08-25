@@ -69,6 +69,17 @@ for label, grp, pop_af_key in [
     print(f"{label}: N={entry['n']} mean={entry['mean']:+.4f} sd={entry['sd']:.4f} "
           f"%pos={100*pct_pos:.1f}% p_vs0={p1:.2e}")
 
+# ── 1b. Wilcoxon test: within-population AF matched? ─────────────────────────
+print("\n=== 1b. Wilcoxon test: AFR pop-AF vs EUR pop-AF ===")
+af_afr_vals = np.array([r["af_afr"] for r in afr_h38])
+af_eur_vals = np.array([r["af_eur"] for r in eur_h38])
+wstat, wp = sp.mannwhitneyu(af_afr_vals, af_eur_vals, alternative="two-sided")
+stats["wilcoxon_af_match"] = {"U": float(wstat), "p": float(wp),
+                               "AFR_af_mean": float(np.mean(af_afr_vals)),
+                               "EUR_af_mean": float(np.mean(af_eur_vals))}
+print(f"AFR pop-AF mean={np.mean(af_afr_vals):.3f} EUR pop-AF mean={np.mean(af_eur_vals):.3f}")
+print(f"Wilcoxon/Mann-Whitney U={wstat:.0f} p={wp:.3f}")
+
 # ── 2. Between-group: AFR vs EUR (same model) ─────────────────────────────────
 print("\n=== 2. AFR vs EUR (between-group, same model) ===")
 for model, afr, eur in [("NT-hg38", afr_h38, eur_h38), ("NT-1000G", afr_1kg, eur_1kg)]:
@@ -76,10 +87,14 @@ for model, afr, eur in [("NT-hg38", afr_h38, eur_h38), ("NT-1000G", afr_1kg, eur
     sc_e = np.array([r["bias_score"] for r in eur])
     t, p = sp.ttest_ind(sc_a, sc_e, equal_var=False)
     diff = float(np.mean(sc_e) - np.mean(sc_a))
-    d    = diff / float(np.sqrt((np.var(sc_a) + np.var(sc_e)) / 2))
+    na, ne = len(sc_a), len(sc_e)
+    pooled_sd = float(np.sqrt(((na-1)*np.var(sc_a, ddof=1) + (ne-1)*np.var(sc_e, ddof=1)) / (na+ne-2)))
+    d    = diff / pooled_sd
+    pct_afr_below_eur_mean = float(np.mean(sc_a < np.mean(sc_e)))
     key  = f"between_AFR_EUR_{model.replace('-','_')}"
-    stats[key] = {"diff_EUR_minus_AFR": diff, "t": float(t), "p": float(p), "cohens_d": float(d)}
-    print(f"{model}: EUR-AFR={diff:+.4f} t={t:.3f} p={p:.3e} d={d:.4f}")
+    stats[key] = {"diff_EUR_minus_AFR": diff, "t": float(t), "p": float(p), "cohens_d": float(d),
+                  "pct_afr_below_eur_mean": pct_afr_below_eur_mean}
+    print(f"{model}: EUR-AFR={diff:+.4f} t={t:.3f} p={p:.3e} d={d:.4f} pct_AFR_below_EUR_mean={100*pct_afr_below_eur_mean:.1f}%")
 
 # ── 3. Between-model: hg38 vs 1000G (same group) ─────────────────────────────
 print("\n=== 3. hg38 vs 1000G (between-model, same group) ===")

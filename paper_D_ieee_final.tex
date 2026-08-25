@@ -14,6 +14,7 @@
 \usepackage{multirow}
 \usepackage{url}
 \usepackage{microtype}
+\graphicspath{{figures/}}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -47,8 +48,8 @@ variants from gnomAD and compare models pretrained on the human reference genome
 and on 3{,}202 genetically diverse human genomes. Both models exhibit a
 significant ancestry-associated scoring asymmetry, with European-enriched
 variants receiving greater reference allele preference than African-enriched
-variants. Strikingly, the EUR--AFR bias gap changes by only 1.2\% following
-diverse-genome pretraining. Neither population allele frequency nor local
+variants. Strikingly, the EUR--AFR bias gap is practically unchanged following
+diverse-genome pretraining (1.2\% change, non-decreasing). Neither population allele frequency nor local
 genomic variant density explains the observed difference, indicating that the
 effect is not simply driven by variant prevalence or regional sequence variation.
 These results show that substantially increasing genomic diversity during
@@ -74,9 +75,9 @@ approximately 70\% of its sequence derives from a single donor (RP11), whose
 ancestry has been characterised as African-European admixed \cite{t2t}.
 Crucially, hg38 is a \emph{single linear haplotype}---it encodes one path
 through human sequence diversity, anchoring all downstream analyses to one
-set of reference alleles regardless of the donor's precise ancestry. As of 2023, 86.5\% of participants in the GWAS Catalog were
+set of reference alleles regardless of the donor's precise ancestry. Sirugo et al.\ reported that 86.5\% of participants in the GWAS Catalog were
 of European descent \cite{diversity_gap}, and non-European patients experience
-a ${\sim}23\%$ increase in variants of uncertain significance (VUS) compared
+significantly higher rates of variants of uncertain significance (VUS) compared
 to Europeans \cite{vus_burden}---a disparity partly attributed to reference
 genome bias propagating through analytical tools.
 
@@ -89,7 +90,7 @@ The Nucleotide Transformer (NT) \cite{dalla_torre_nt}, published in
 \emph{Nature Methods} (2025), exemplifies this class with two 500M-parameter
 models: NT-hg38, pretrained on the single human reference genome, and NT-1000G,
 pretrained on 3{,}202 genetically diverse genomes from the 1000 Genomes Project
-(1000G) spanning 26 populations including ${\sim}660$ African samples (26\%).
+(1000G) spanning 26 populations including ${\sim}660$ African-ancestry samples (${\sim}26\%$).
 The NT-1000G model was explicitly designed to \emph{``encode a better
 representation of human genetic variation''} \cite{dalla_torre_nt}.
 
@@ -139,7 +140,7 @@ to DNA sequence foundation models.
 \subsection{Nucleotide Transformer}
 Dalla-Torre et al.~\cite{dalla_torre_nt} introduced NT-hg38 and NT-1000G,
 evaluating downstream task performance on genomic benchmarks. The NT-1000G model
-is trained on 3{,}202 phased genomes from 27 geographically diverse populations
+is trained on 3{,}202 phased genomes from 26 geographically diverse populations
 totalling 19.2 trillion nucleotides. The authors report improved performance on
 some tasks; no ancestry-stratified analysis of the internal bias scoring function
 is performed.
@@ -190,18 +191,17 @@ Yielded $N{=}7{,}684$ variants; within-population AF mean 0.179 (IQR 0.120--0.22
 $\text{AF}_\text{AFR} \leq 0.02$.
 Yielded $N{=}509$ variants; within-population AF mean 0.171 (IQR 0.118--0.196).
 
-The two sets are matched for within-population allele frequency magnitude
-(Wilcoxon $p{=}0.31$). They differ substantially in global minor allele
-frequency: AFR mean 0.031, EUR mean 0.111. We chose symmetric thresholds to
-ensure the comparison is driven by ancestry enrichment, not by frequency
-magnitude.
+The two sets have similar within-population allele frequency means (AFR: 0.179,
+EUR: 0.171; absolute difference 0.008), indicating that the comparison is not
+confounded by large differences in within-group frequency magnitude. They differ
+substantially in global minor allele frequency: AFR mean 0.031, EUR mean 0.111.
+Symmetric thresholds ensure the comparison is driven by ancestry enrichment, not
+by global frequency magnitude.
 
 \subsection{Models}
 
-Both models were loaded from HuggingFace in CPU-only mode
-(CUDA disabled via \texttt{CUDA\_VISIBLE\_DEVICES=""} before import,
-required to avoid GPU architecture incompatibility with older
-accelerators):
+Both models were loaded from HuggingFace in FP32 precision on CPU
+to ensure exact numerical reproducibility across hardware architectures:
 \begin{itemize}
   \item \textbf{NT-hg38:} \texttt{InstaDeepAI/nucleotide-transformer-500m-human-ref} ---
         trained on the single GRCh38 reference genome.
@@ -239,13 +239,26 @@ $\pm$500 bp of each focal variant.
 % ── IV. Results ───────────────────────────────────────────────────────────────
 \section{Results}
 
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{fig1_violin.png}
+\caption{Bias score distributions by ancestry group and model. Violin bodies show
+the full distribution; internal bars span IQR; white circles mark the median;
+diamonds mark the group mean. The dashed horizontal line is zero bias. Both models
+show significantly positive bias for African-enriched variants (AFR), and
+European-enriched variants (EUR) score systematically higher. The annotation box
+summarises the EUR$-$AFR gap statistics including balanced resampling results
+(1,000 iterations, $N{=}509$ vs $N{=}509$).}
+\label{fig:violin}
+\end{figure*}
+
 \subsection{Both Models Show Strong Positive Reference Bias for\\African-Enriched Variants}
 
-Table~\ref{tab:descriptive} summarises bias score distributions. NT-hg38 scores
+Table~\ref{tab:descriptive} summarises bias score distributions (Fig.~\ref{fig:violin}). NT-hg38 scores
 7{,}684 African-enriched variants with mean $+0.582$ (${\pm}2.227$;
 $t$-test vs.\ zero: $p{=}2.4{\times}10^{-112}$; 59.7\% of variants positive).
 NT-1000G yields mean $+0.508$ ($p{=}3.7{\times}10^{-86}$; 58.4\% positive).
-These effects are large in terms of $p$-value but modest in absolute magnitude:
+These results are highly significant statistically yet modest in absolute magnitude:
 the model still systematically prefers the reference allele even when the
 alternate allele is present at 10--50\% frequency in African populations.
 
@@ -347,9 +360,20 @@ EUR &  6.8\% & 0.635 & 0.030 & \\
 \end{tabular}
 \end{table}
 
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{fig2_calibration.png}
+\caption{Within-group bias score calibration vs.\ within-population allele
+frequency (AF). Each point is one scored variant. Regression lines are shown
+for AFR (blue) and EUR (red). Pearson $r$ and $p$-values are annotated. Both
+models show $R^2{<}1\%$, indicating that population allele frequency explains
+essentially none of the variance in bias score.}
+\label{fig:calibration}
+\end{figure*}
+
 \subsection{Neither Model Is Calibrated to Population Allele Frequency}
 
-Within the African-enriched group, the Pearson correlation between
+Within the African-enriched group (Fig.~\ref{fig:calibration}), the Pearson correlation between
 $\text{AF}_\text{AFR}$ and bias score is $r{=}{-}0.053$ ($p{=}3.5{\times}10^{-6}$,
 NT-hg38) and $r{=}{-}0.058$ ($p{=}4.2{\times}10^{-7}$, NT-1000G), explaining
 $R^2{=}$0.28\% and 0.33\% of variance respectively. Within the European-enriched
@@ -375,9 +399,22 @@ European-enriched variants (IQR 4--23 neighbours), the AFR bias mean changes
 from $+$0.508 to $+$0.501; the gap with the EUR group ($+$0.941) is statistically
 unchanged ($p{=}4.2{\times}10^{-5}$). Local genomic variant density is not a confounder.
 
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{fig3_ranking_displacement.png}
+\caption{Cumulative ranking displacement. Variants from both groups are pooled
+and ranked by bias score (highest to lowest). The $y$-axis shows the cumulative
+percentage of each group captured within the top-$k\%$ of variants. EUR-enriched
+variants (red) lie above the proportional baseline (dashed), indicating
+over-representation at high bias scores. AFR-enriched variants (blue) are
+under-represented, particularly in the top decile (annotated). The effect is
+consistent across both models.}
+\label{fig:ranking}
+\end{figure*}
+
 \subsection{Downstream Scoring Asymmetry}
 
-The scoring gap has a concrete directional consequence: 63.8\% of
+The scoring gap has a concrete directional consequence (Fig.~\ref{fig:ranking}): 63.8\% of
 African-enriched variants score below the European-enriched mean.
 Negative bias (model preferring ALT over REF) affects 41.6\% of
 African-enriched variants vs.\ 35.2\% of European-enriched variants
