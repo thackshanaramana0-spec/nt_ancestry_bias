@@ -55,9 +55,9 @@ effect is not simply driven by variant prevalence or regional sequence variation
 These results show that substantially increasing genomic diversity during
 pretraining does not eliminate ancestry-associated reference bias in Nucleotide
 Transformer and point to a persistent reference-centered component in DNA
-foundation-model scoring. Addressing this asymmetry will require architecturally reference-agnostic
-training---such as pangenome-based representations---rather than simply
-expanding training-genome diversity within the current linear-reference
+foundation-model scoring. These findings motivate evaluating reference-agnostic training approaches,
+such as pangenome-based representations, as potential remedies beyond
+simply expanding training-genome diversity within the current linear-reference
 framework.
 \end{abstract}
 
@@ -103,10 +103,14 @@ predicts the probability of each vocabulary token at the masked position. The
   \label{eq:bias}
 \end{equation}
 Positive $S$ means the model assigns higher probability to the reference
-allele; negative $S$ means it prefers the alternate. A population-fair model
-should score variants with $S \approx 0$ when the alternate allele is common
-in the sampled population, regardless of ancestry. Deviation from this
-expectation quantifies the model's reference allele preference.
+allele; negative $S$ means it prefers the alternate. Under reference-neutral
+scoring, ancestry-enriched variants with matched within-population allele
+frequencies would receive statistically similar $S$ distributions regardless
+of which population enriches them. A systematic difference in $S$ between
+AFR-enriched and EUR-enriched variants---at matched within-population
+frequency---therefore constitutes an ancestry-associated scoring asymmetry,
+and the sign of $S$ directly measures the direction of reference allele
+preference.
 
 Pathak et al. \cite{pathak_2024} demonstrated pervasive ancestry bias in 52
 classical variant effect predictors (VEPs) and in protein language models,
@@ -184,8 +188,10 @@ whether diverse training corrects it.
 We queried gnomAD v4~\cite{gnomad_v4} via the public GraphQL API for all
 chromosome 22 SNVs with population-stratified allele frequencies. Chromosome 22
 was selected as a well-annotated, fully assembled autosome with 171{,}625
-gnomAD common variants and complete population allele frequency data; results on
-this chromosome are broadly representative of autosomal patterns. Two variant
+gnomAD common variants and complete population allele frequency data, providing
+sufficient variant density to construct the ancestry-enriched sets described
+below. Generalizability to other chromosomes is not claimed and is noted as a
+limitation (Section~\ref{sec:limitations}). Two variant
 sets were constructed using symmetric criteria:
 
 \noindent\textbf{African-enriched (AFR):} $\text{AF}_\text{AFR} \geq 0.10$,
@@ -271,7 +277,8 @@ $p{=}2.4{\times}10^{-112}$); 59.7\% of variants receive positive bias.
 NT-1000G yields mean $+0.508$ ($p{=}3.7{\times}10^{-86}$; 58.4\% positive).
 The model systematically assigns reference allele preference even when the
 alternate allele is present at 10--50\% frequency in African populations---variants
-where a population-fair model should score near zero.
+for which reference-neutral scoring would predict distributions similar to
+ancestry-matched European-enriched variants.
 
 \begin{table}[t]
 \caption{Bias score descriptive statistics per group and model}
@@ -358,10 +365,11 @@ statistically and practically unchanged: $\Delta$ changes by $+0.005$
 ($\mathbf{1.2\%}$), from 0.428 to 0.433 (Table~\ref{tab:between_model}).
 Adding 3{,}202 diverse training genomes---26\% African---fails to close the gap.
 
-Examining each group separately, AFR variants show a modest absolute reduction
-in mean bias (12.6\%, $p{=}0.041$, $d{=}0.033$), but EUR variants do not
-(6.8\%, $p{=}0.635$). Because EUR bias falls at the same rate as AFR bias, the
-relative asymmetry between groups is preserved.
+Examining each group separately, AFR variants show a statistically significant
+absolute reduction in mean bias (0.074 log-likelihood units, 12.6\%, $p{=}0.041$,
+$d{=}0.033$), while the EUR reduction is smaller and non-significant (0.069 units,
+6.8\%, $p{=}0.635$). Because the two absolute reductions are nearly equal
+(0.005-unit difference), the EUR--AFR gap is preserved and slightly widens.
 
 \begin{table}[t]
 \caption{Effect of diversity training (NT-hg38 $\rightarrow$ NT-1000G)}
@@ -509,6 +517,7 @@ remove the single-linear-reference anchor that our analysis identifies as a
 candidate source of the asymmetry.
 
 \subsection{Limitations}
+\label{sec:limitations}
 
 This study uses chromosome 22 only. Only NT models are evaluated; whether other
 DNA LMs (DNABERT-2, HyenaDNA, Evo) show analogous patterns requires separate
