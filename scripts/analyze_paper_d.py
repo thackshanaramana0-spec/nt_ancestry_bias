@@ -96,6 +96,19 @@ for model, afr, eur in [("NT-hg38", afr_h38, eur_h38), ("NT-1000G", afr_1kg, eur
                   "pct_afr_below_eur_mean": pct_afr_below_eur_mean}
     print(f"{model}: EUR-AFR={diff:+.4f} t={t:.3f} p={p:.3e} d={d:.4f} pct_AFR_below_EUR_mean={100*pct_afr_below_eur_mean:.1f}%")
 
+# ── 2b. AUROC (Mann-Whitney equivalence): bias score → ancestry label ──────────
+print("\n=== 2b. AUROC (bias score as ancestry discriminator) ===")
+for model, afr, eur in [("NT-hg38", afr_h38, eur_h38), ("NT-1000G", afr_1kg, eur_1kg)]:
+    sc_a = np.array([r["bias_score"] for r in afr])
+    sc_e = np.array([r["bias_score"] for r in eur])
+    # AUROC = P(score_EUR > score_AFR); alternative='greater' → U counts EUR > AFR pairs
+    U, p_mw = sp.mannwhitneyu(sc_e, sc_a, alternative="greater")
+    auroc = float(U) / (len(sc_e) * len(sc_a))
+    key = f"auroc_{model.replace('-','_')}"
+    stats[key] = {"U": float(U), "p_mannwhitney": float(p_mw), "auroc": auroc,
+                  "n_eur": len(sc_e), "n_afr": len(sc_a)}
+    print(f"{model}: U={U:.0f} p={p_mw:.3e} AUROC={auroc:.4f}")
+
 # ── 3. Between-model: hg38 vs 1000G (same group) ─────────────────────────────
 print("\n=== 3. hg38 vs 1000G (between-model, same group) ===")
 for vtype, h38, kg in [("AFR", afr_h38, afr_1kg), ("EUR", eur_h38, eur_1kg)]:
@@ -103,7 +116,9 @@ for vtype, h38, kg in [("AFR", afr_h38, afr_1kg), ("EUR", eur_h38, eur_1kg)]:
     sc_k = np.array([r["bias_score"] for r in kg])
     t, p = sp.ttest_ind(sc_h, sc_k, equal_var=False)
     diff = float(np.mean(sc_h) - np.mean(sc_k))
-    d    = diff / float(np.sqrt((np.var(sc_h) + np.var(sc_k)) / 2))
+    nh, nk = len(sc_h), len(sc_k)
+    pooled_sd = float(np.sqrt(((nh-1)*np.var(sc_h, ddof=1) + (nk-1)*np.var(sc_k, ddof=1)) / (nh+nk-2)))
+    d    = diff / pooled_sd
     pct_red = diff / float(np.mean(sc_h)) * 100 if np.mean(sc_h) > 0 else float("nan")
     key = f"between_hg38_1000G_{vtype}"
     stats[key] = {"reduction": float(pct_red), "diff": diff, "t": float(t), "p": float(p), "cohens_d": float(d)}
